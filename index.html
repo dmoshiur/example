@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b1020" />
+  <meta name="description" content="Daily routine alarm planner — a mobile-first schedule table with ringtones and snooze." />
+  <title>DayDing — Daily Routine Alarms</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⏰</text></svg>" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <span class="brand-icon" aria-hidden="true">⏰</span>
+        <div>
+          <h1>DayDing</h1>
+          <p class="tagline">Your daily routine, on time</p>
+        </div>
+      </div>
+      <div class="clock" aria-live="off">
+        <div class="clock-time" id="clockTime">--:--:--</div>
+        <div class="clock-date" id="clockDate">—</div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Sound enable banner (browsers require one tap before audio can play) -->
+    <section class="sound-banner" id="soundBanner">
+      <div>
+        <strong>🔔 Turn on alarm sound</strong>
+        <p>Tap once so your browser allows ringtones &amp; notifications.</p>
+      </div>
+      <button class="btn btn-primary" id="enableSoundBtn" type="button">Enable sound</button>
+    </section>
+
+    <!-- Next routine summary -->
+    <section class="next-card" id="nextCard">
+      <span class="next-label">Up next</span>
+      <span class="next-info" id="nextInfo">Loading…</span>
+    </section>
+
+    <!-- Routine table -->
+    <section class="table-card">
+      <div class="table-card-head">
+        <h2>My Daily Routine <span class="count-pill" id="routineCount">0</span></h2>
+        <button class="btn btn-primary" id="addRoutineBtn" type="button">＋ Add</button>
+      </div>
+
+      <div class="table-scroll">
+        <table class="routine-table" id="routineTable">
+          <thead>
+            <tr>
+              <th scope="col">Time</th>
+              <th scope="col">Routine</th>
+              <th scope="col">Days</th>
+              <th scope="col">Ringtone</th>
+              <th scope="col">Alarm</th>
+              <th scope="col"><span class="visually-hidden">Actions</span></th>
+            </tr>
+          </thead>
+          <tbody id="routineBody"><!-- rows rendered by app.js --></tbody>
+        </table>
+      </div>
+      <p class="table-empty" id="tableEmpty" hidden>No routines yet — tap <strong>＋ Add</strong> to create your first alarm.</p>
+      <p class="table-note">💡 Keep this page open (screen on or tab active) so alarms can ring. Use <strong>▶</strong> to preview a ringtone.</p>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>DayDing · routine alarms with snooze · data stays on this device</p>
+  </footer>
+
+  <!-- Add / Edit routine modal -->
+  <div class="modal-backdrop" id="formModal" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="formTitle">
+      <div class="modal-head">
+        <h2 id="formTitle">Add routine</h2>
+        <button class="icon-btn" id="formCloseBtn" type="button" aria-label="Close">✕</button>
+      </div>
+      <form id="routineForm" novalidate>
+        <input type="hidden" id="f-id" />
+
+        <div class="field-row">
+          <div class="field">
+            <label for="f-time">Time</label>
+            <input type="time" id="f-time" required />
+          </div>
+          <div class="field field-grow">
+            <label for="f-title">Routine</label>
+            <input type="text" id="f-title" placeholder="e.g. Morning workout" maxlength="60" required />
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="f-note">Note <span class="muted">(optional)</span></label>
+          <input type="text" id="f-note" placeholder="e.g. 20 min walk" maxlength="80" />
+        </div>
+
+        <div class="field">
+          <span class="label">Repeat on</span>
+          <div class="day-chips" id="dayChips">
+            <button type="button" class="chip" data-day="1">Mon</button>
+            <button type="button" class="chip" data-day="2">Tue</button>
+            <button type="button" class="chip" data-day="3">Wed</button>
+            <button type="button" class="chip" data-day="4">Thu</button>
+            <button type="button" class="chip" data-day="5">Fri</button>
+            <button type="button" class="chip" data-day="6">Sat</button>
+            <button type="button" class="chip" data-day="0">Sun</button>
+          </div>
+          <div class="chip-shortcuts">
+            <button type="button" class="link-btn" id="daysAll">Every day</button>
+            <button type="button" class="link-btn" id="daysWeek">Weekdays</button>
+            <button type="button" class="link-btn" id="daysWeekend">Weekends</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="f-ringtone">Ringtone</label>
+          <div class="ringtone-row">
+            <select id="f-ringtone">
+              <option value="classic">Classic Bell</option>
+              <option value="digital">Digital Beep</option>
+              <option value="chime">Gentle Chime</option>
+              <option value="sunrise">Morning Rise</option>
+            </select>
+            <button type="button" class="btn btn-ghost" id="previewRingtoneBtn">▶ Preview</button>
+          </div>
+        </div>
+
+        <p class="form-error" id="formError" hidden></p>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost" id="formCancelBtn">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save routine</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Full-screen ringing alarm overlay -->
+  <div class="alarm-overlay" id="alarmOverlay" hidden>
+    <div class="alarm-card" role="alertdialog" aria-modal="true" aria-labelledby="alarmTitle">
+      <div class="alarm-bell" aria-hidden="true">🔔</div>
+      <p class="alarm-time" id="alarmTime">6:30 AM</p>
+      <h2 class="alarm-title" id="alarmTitle">Routine time</h2>
+      <p class="alarm-note" id="alarmNote"></p>
+      <div class="alarm-actions">
+        <button class="btn btn-snooze" id="snoozeBtn" type="button">😴 Snooze 5 min</button>
+        <button class="btn btn-dismiss" id="dismissBtn" type="button">✓ I’m up — dismiss</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
